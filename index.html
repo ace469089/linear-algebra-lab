@@ -1,0 +1,769 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>[hidden]{display:none!important}body{margin:0}img{max-width:100%}</style>
+</head>
+<body>
+<title>Linear Algebra Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..600&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one slide at a time — reading column on the left, live instrument on the right; graph paper in light, chalkboard in dark. */
+:root{
+  --bg:#EEF3F0; --paper:#FFFFFF; --grid:#DCE6E1; --ink:#1B2A24; --muted:#5A6D65; --line:#C9D6D0;
+  --accent:#0F6B5C; --accent-soft:#D5ECE6; --warm:#B8730C; --warm-soft:#F6E7CC; --bad:#B23A3A; --bad-soft:#F6DADA; --good:#1F7A4A;
+  --display:"Newsreader", "Iowan Old Style", Georgia, serif;
+  --body:"Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#15201C; --paper:#1D2A25; --grid:#24342E; --ink:#E6EEEA; --muted:#9BB0A7; --line:#33463F;
+  --accent:#6BD1B6; --accent-soft:#1F3B34; --warm:#F0B44A; --warm-soft:#3D3220; --bad:#F08A8A; --bad-soft:#402426; --good:#7FD8A4; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#15201C; --paper:#1D2A25; --grid:#24342E; --ink:#E6EEEA; --muted:#9BB0A7; --line:#33463F;
+  --accent:#6BD1B6; --accent-soft:#1F3B34; --warm:#F0B44A; --warm-soft:#3D3220; --bad:#F08A8A; --bad-soft:#402426; --good:#7FD8A4; color-scheme:dark }
+
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:28px 28px;display:flex;flex-direction:column;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+*{box-sizing:border-box}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ---------- top bar ---------- */
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;padding-block:12px 10px;border-bottom:1px solid var(--line)}
+.brand{font-family:var(--display);font-size:1.25rem;font-weight:600;letter-spacing:.01em;white-space:nowrap}
+.brand small{font-family:var(--body);font-weight:400;color:var(--muted);font-size:.8rem;margin-left:8px;letter-spacing:.04em;text-transform:uppercase}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tab{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:4px 12px;cursor:pointer;font-size:.88rem}
+.tab[aria-current="true"]{background:var(--accent);border-color:var(--accent);color:var(--paper)}
+.spacer{flex:1}
+.tool{border:1px solid var(--line);background:var(--paper);border-radius:8px;padding:4px 10px;cursor:pointer;font-size:.88rem}
+.tool[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent)}
+
+/* ---------- stage ---------- */
+main{flex:1;min-height:0;overflow:auto;padding-block:18px 8px}
+.slide{max-width:1180px;margin:0 auto}
+.slide:not(.on){display:none}
+.eyebrow{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+h1{font-family:var(--display);font-weight:600;font-size:clamp(1.6rem,3.2vw,2.4rem);line-height:1.15;margin:.15em 0 .5em;text-wrap:balance}
+h2{font-family:var(--display);font-weight:600;font-size:1.25rem;margin:.2em 0 .4em}
+.cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:22px;align-items:start}
+@media (max-width:860px){.cols{grid-template-columns:minmax(0,1fr)}}
+.read{min-width:0;max-width:62ch}
+.read p{margin:.4em 0 .8em}
+.panel{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px;min-width:0}
+.panel h3{margin:0 0 8px;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+canvas{display:block;width:100%;aspect-ratio:1/1;max-width:100%;border-radius:6px;background:var(--paper);touch-action:none}
+canvas.wide{aspect-ratio:16/10}
+.m{font-family:var(--display);font-style:italic}
+.num,.mono{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:.92em}
+.eq{font-family:var(--display);font-size:1.12rem;margin:.5em 0;overflow-x:auto;padding:2px 0}
+.big{font-size:1.3rem}
+.hl{color:var(--accent);font-weight:600}
+.warm{color:var(--warm);font-weight:600}
+.box{display:inline-block;border:1.5px solid var(--accent);border-radius:4px;padding:0 6px}
+.steps{display:flex;flex-direction:column;gap:6px;margin:.4em 0}
+.step{display:grid;grid-template-columns:28px minmax(0,1fr);gap:8px;align-items:baseline}
+.step b.n{font-family:var(--mono);color:var(--accent);font-size:.85rem}
+.chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:2px 10px;font-size:.85rem;font-weight:600}
+.chip.good{background:var(--accent-soft);color:var(--accent)}
+.chip.warn{background:var(--warm-soft);color:var(--warm)}
+.chip.bad{background:var(--bad-soft);color:var(--bad)}
+.check{color:var(--good);font-weight:700}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{border:1px solid var(--accent);background:transparent;color:var(--accent);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:.88rem}
+.btn:hover{background:var(--accent-soft)}
+.btn.solid{background:var(--accent);color:var(--paper)}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:.82rem;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
+.small{font-size:.88rem;color:var(--muted)}
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:10px}
+@media (max-width:860px){.cards{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:16px;cursor:pointer;text-align:left}
+.card:hover{border-color:var(--accent)}
+.card .who{font-family:var(--mono);font-size:.8rem;color:var(--accent)}
+.card h2{margin:.2em 0}
+table.t{border-collapse:collapse;width:100%;font-size:.95rem}
+table.t th,table.t td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+table.t th{font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.tablewrap{overflow-x:auto}
+
+/* matrices */
+.mat{display:inline-flex;align-items:stretch;vertical-align:middle;margin:0 3px}
+.mat .br{width:6px;border:1.5px solid currentColor}
+.mat .br.l{border-right:0;border-radius:3px 0 0 3px}
+.mat .br.r{border-left:0;border-radius:0 3px 3px 0}
+.mat .g{display:grid;gap:2px 12px;padding:3px 6px;font-family:var(--mono);font-size:.9rem;font-style:normal;text-align:center;font-variant-numeric:tabular-nums}
+.mat .g span.sel{background:var(--warm-soft);border-radius:3px}
+.mat .g span.pick{cursor:pointer;border-radius:3px}
+.mat .g span.pick:hover{background:var(--accent-soft)}
+.mat .g span.rowhl{background:var(--accent-soft);border-radius:3px}
+
+/* inputs */
+.mx{display:inline-grid;grid-template-columns:repeat(2,64px);gap:6px;padding:6px 10px;border-left:2px solid var(--ink);border-right:2px solid var(--ink);border-radius:4px;vertical-align:middle}
+.mx input{width:64px;padding:4px 6px;border:1px solid var(--line);border-radius:5px;background:var(--bg);font-family:var(--mono);text-align:center}
+.mx input[readonly]{opacity:.65}
+.sl{display:grid;grid-template-columns:minmax(90px,auto) minmax(0,1fr) 54px;gap:8px;align-items:center;font-size:.9rem}
+.sl input[type=range]{width:100%;accent-color:var(--accent)}
+.sl output{font-family:var(--mono);text-align:right}
+.sliders{display:flex;flex-direction:column;gap:4px;margin:.5em 0}
+.vin{width:62px;padding:3px 5px;border:1px solid var(--line);border-radius:5px;background:var(--bg);font-family:var(--mono);text-align:center}
+
+/* notes + nav */
+.notes{max-width:1180px;margin:14px auto 0;background:var(--warm-soft);border:1px solid var(--warm);border-radius:10px;padding:12px 16px;font-size:.98rem}
+.notes b{color:var(--warm);letter-spacing:.08em;font-size:.75rem;text-transform:uppercase;display:block;margin-bottom:2px}
+.nav{display:flex;align-items:center;gap:12px;padding-block:10px 12px;border-top:1px solid var(--line)}
+.nav .where{flex:1;min-width:0;font-size:.88rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar{height:3px;background:var(--line);border-radius:2px;overflow:hidden;margin-top:4px}
+.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .25s}
+@media (prefers-reduced-motion: reduce){.bar i{transition:none}}
+.kbd{font-family:var(--mono);font-size:.78rem;border:1px solid var(--line);border-radius:4px;padding:0 5px;background:var(--paper)}
+</style>
+
+<header class="top">
+  <div class="brand">Linear Algebra Lab<small>QMB 6875 · Version 3</small></div>
+  <nav class="tabs" id="tabs" aria-label="Parts"></nav>
+  <div class="spacer"></div>
+  <button class="tool" id="notesBtn" aria-pressed="false" title="Toggle speaker notes (N)">Speaker notes</button>
+  <button class="tool" id="fsBtn" title="Full screen (F)">Full screen</button>
+</header>
+
+<main id="stage">
+
+<!-- ======================= TITLE ======================= -->
+<section class="slide" data-part="Start" data-title="Three talks">
+  <div class="eyebrow">QMB 6875 · Stochastic Methods for Business Analytics · Allie McCutcheon</div>
+  <h1>Linear algebra, the language of multivariate models</h1>
+  <p class="read">Three short lectures, built to the class notes. Every slide has a live instrument: change the numbers and the algebra redoes itself. Use <span class="kbd">←</span> <span class="kbd">→</span> to move, <span class="kbd">N</span> for speaker notes.</p>
+  <div class="cards">
+    <button class="card" data-jump="p1"><div class="who">Person 1</div><h2>Simple operations</h2><div class="small">Vectors, matrix multiplication, eigenvalues and eigenvectors of <span class="m">A</span>, spectral and Cholesky decompositions, the inverse.</div></button>
+    <button class="card" data-jump="p2"><div class="who">Person 2</div><h2>A two-output firm</h2><div class="small">Linear demand, substitutes, a cost link between the goods. Profit turns out to be a quadratic form.</div></button>
+    <button class="card" data-jump="p3"><div class="who">Person 3</div><h2>Quadratic forms</h2><div class="small">Bivariate forms, level sets, and how the matrix <span class="m">A</span> decides circle, ellipse, lines or hyperbola.</div></button>
+  </div>
+  <aside class="notes"><b>Say</b>“Linear algebra is the language we use for anything multivariate. These three talks fit together: Person 1 builds the tools, Person 2 uses them on a business problem, and Person 3 explains the shape behind both.”</aside>
+</section>
+
+<!-- ======================= PERSON 1 ======================= -->
+<section class="slide" data-part="Person 1" data-title="Vectors: add, subtract, scale" id="p1">
+  <div class="eyebrow">Person 1 · Step 1</div>
+  <h1>Vectors: add, subtract, scale</h1>
+  <div class="cols">
+    <div class="read">
+      <p>A vector is a column of numbers. Every operation works <b>entry by entry</b>.</p>
+      <div class="row">
+        <span class="m">u</span> = (<input class="vin" id="u1" value="2" inputmode="decimal">, <input class="vin" id="u2" value="1" inputmode="decimal">)
+        &nbsp; <span class="m">v</span> = (<input class="vin" id="v1" value="1" inputmode="decimal">, <input class="vin" id="v2" value="3" inputmode="decimal">)
+        &nbsp; <span class="m">k</span> = <input class="vin" id="kk" value="2" inputmode="decimal">
+      </div>
+      <div id="vecOut" class="steps" style="margin-top:12px"></div>
+      <p class="small">Drag the tips of <span class="m">u</span> and <span class="m">v</span> on the grid.</p>
+    </div>
+    <div class="panel"><h3>Parallelogram rule</h3><canvas id="cvVec"></canvas>
+      <div class="legend"><span><i style="background:var(--accent)"></i>u</span><span><i style="background:var(--warm)"></i>v</span><span><i style="background:var(--ink)"></i>u + v</span><span><i style="background:var(--bad)"></i>u − v</span><span><i style="background:var(--muted)"></i>k·u</span></div>
+    </div>
+  </div>
+  <aside class="notes"><b>Say</b>“Adding is the parallelogram rule: walk along u, then along v. Subtracting is the arrow from the tip of v to the tip of u. Scaling stretches the arrow, and a negative number flips it.” Mention length ‖u‖ = √5 and the inner product uᵀv = 5; we need length later to normalize eigenvectors.</aside>
+</section>
+
+<section class="slide" data-part="Person 1" data-title="Matrix multiplication">
+  <div class="eyebrow">Person 1 · Step 2</div>
+  <h1>Matrix multiplication: row times column</h1>
+  <div class="cols">
+    <div class="read">
+      <p>Entry <span class="m">(i, j)</span> of <span class="m">AB</span> is <b>row i of A</b> times <b>column j of B</b>: multiply matching pairs and add. Inner sizes must match.</p>
+      <div class="row" style="gap:18px">
+        <div><div class="small">A</div><div class="mx" id="mmA"></div></div>
+        <div><div class="small">B</div><div class="mx" id="mmB"></div></div>
+      </div>
+      <div class="row" style="margin-top:8px"><button class="btn" data-mm="swap">B = swap matrix</button><button class="btn" data-mm="A">B = A (gives A²)</button><button class="btn" data-mm="I">B = identity</button></div>
+      <p class="small" style="margin-top:10px">Click any entry of a product to see the row and column that build it.</p>
+    </div>
+    <div class="panel">
+      <h3>Products</h3>
+      <div class="eq" id="mmOut"></div>
+      <div id="mmExplain" class="steps"></div>
+      <div id="mmComm" style="margin-top:8px"></div>
+    </div>
+  </div>
+  <aside class="notes"><b>Say</b>Do one entry out loud: “row one of A is (1, 1), column two is (1, 2): one times one plus one times two is three.” A matrix transforms a vector; its columns are where the basis vectors land. With the swap matrix, multiplying on the right swaps A's columns and on the left swaps its rows, so AB ≠ BA. A² = [2 3; 3 5] is made of Fibonacci numbers.</aside>
+</section>
+
+<section class="slide" data-part="Person 1" data-title="Eigenvalues and eigenvectors">
+  <div class="eyebrow">Person 1 · Step 3</div>
+  <h1>Eigenvalues and eigenvectors</h1>
+  <div class="cols">
+    <div class="read">
+      <div class="row" style="margin-bottom:6px"><span class="small">Matrix</span> <span class="m">A</span> = <div class="mx p1mx"></div></div>
+      <div class="row p1presets"></div>
+      <p style="margin-top:10px">An eigenvector is a direction <span class="m">A</span> only stretches: <span class="m">Av = λv</span>. That needs <span class="m">|A − λI| = 0</span>.</p>
+      <div id="eigOut" class="steps"></div>
+    </div>
+    <div class="panel"><h3>A stretches the unit circle into an ellipse</h3><canvas id="cvEig"></canvas>
+      <div class="sl" style="margin-top:8px"><label for="eigT">Apply A</label><input type="range" id="eigT" min="0" max="1" step="0.01" value="1"><output id="eigTo">100%</output></div>
+      <div class="row" style="margin-top:4px"><button class="btn" id="eigPlay">Play</button></div>
+      <div class="legend"><span><i style="background:var(--muted)"></i>unit circle</span><span><i style="background:var(--ink)"></i>image</span><span><i style="background:var(--accent)"></i>h₁ (λ₁)</span><span><i style="background:var(--warm)"></i>h₂ (λ₂)</span></div>
+    </div>
+  </div>
+  <aside class="notes"><b>Say</b>“For any 2×2, the characteristic polynomial is λ² − trace·λ + determinant. So my roots must add to the trace and multiply to the determinant — and they do.” Eigenvectors are only defined up to a multiple, so normalize to length one. For a symmetric matrix they come out perpendicular. If someone's eigenvector has the opposite sign, they're also right. Press Play to show that only the eigen-directions don't turn.</aside>
+</section>
+
+<section class="slide" data-part="Person 1" data-title="Spectral decomposition">
+  <div class="eyebrow">Person 1 · Step 4</div>
+  <h1>Spectral decomposition: rotate, stretch, rotate back</h1>
+  <div class="cols">
+    <div class="read">
+      <div class="row" style="margin-bottom:6px"><span class="small">Matrix</span> <span class="m">A</span> = <div class="mx p1mx"></div></div>
+      <div id="specOut"></div>
+      <p class="small">Textbook name (Liesen &amp; Mehrmann, Cor. 18.18): the principal axes transformation, <span class="m">A = UDU</span>ᵀ.</p>
+    </div>
+    <div class="panel"><h3>A·x = H · Λ · Hᵀ · x, one move at a time</h3><canvas id="cvSpec"></canvas>
+      <div class="row" style="margin-top:8px">
+        <button class="btn" data-stage="0">Start: x</button>
+        <button class="btn" data-stage="1">1 · Rotate by Hᵀ</button>
+        <button class="btn" data-stage="2">2 · Stretch by Λ</button>
+        <button class="btn" data-stage="3">3 · Rotate back by H</button>
+      </div>
+      <div class="small" id="specStageTxt" style="margin-top:6px"></div>
+    </div>
+  </div>
+  <aside class="notes"><b>Say</b>“The spectral theorem says every symmetric matrix factors as HΛHᵀ: three simple moves. Hᵀ rotates into the eigen-directions, Λ stretches each one, H rotates back. H holds the directions, Λ holds the stretch.” Then: “Let's multiply it back to make sure we get A.” Because H is a rotation, H⁻¹ = Hᵀ, and anything you do to A you can do to the eigenvalues alone: A⁻¹ = HΛ⁻¹Hᵀ. Click the three buttons in order.</aside>
+</section>
+
+<section class="slide" data-part="Person 1" data-title="Cholesky decomposition">
+  <div class="eyebrow">Person 1 · Step 5</div>
+  <h1>Cholesky decomposition: the square root of a matrix</h1>
+  <div class="cols">
+    <div class="read">
+      <div class="row" style="margin-bottom:6px"><span class="small">Matrix</span> <span class="m">A</span> = <div class="mx p1mx"></div></div>
+      <p>Write <span class="m">L</span> lower-triangular, multiply out <span class="m">LL</span>ᵀ, and match entries. <b>Root the corner, divide down, root what's left.</b></p>
+      <div id="cholOut"></div>
+    </div>
+    <div class="panel"><h3>Why it matters: y = L·z turns independent noise into correlated data</h3><canvas id="cvChol"></canvas>
+      <div class="row" style="margin-top:8px"><button class="btn" id="cholRedraw">Draw new sample</button><span class="small" id="cholStat"></span></div>
+      <div class="legend"><span><i style="background:var(--muted)"></i>z: 600 independent standard normal pairs</span><span><i style="background:var(--accent)"></i>y = L z</span></div>
+    </div>
+  </div>
+  <aside class="notes"><b>Say</b>“Cholesky is the matrix version of a square root: like 9 = 3 × 3, we want A = LLᵀ with L lower-triangular. Root the corner, divide down the column, root what's left.” It exists only when A is positive definite — try the [1 2; 2 1] preset to watch it fail. “If z is independent standard normal, Lz has covariance LLᵀ. That's exactly how we built the fathers' and sons' heights.” The sample covariance under the plot should be close to A.</aside>
+</section>
+
+<section class="slide" data-part="Person 1" data-title="The inverse">
+  <div class="eyebrow">Person 1 · Step 6</div>
+  <h1>The inverse, checked by multiplication</h1>
+  <div class="cols">
+    <div class="read">
+      <div class="row" style="margin-bottom:6px"><span class="small">Matrix</span> <span class="m">A</span> = <div class="mx p1mx"></div></div>
+      <div id="invOut"></div>
+    </div>
+    <div class="panel"><h3>Use it: solve A·x = b</h3>
+      <div class="row">b = (<input class="vin" id="b1" value="3" inputmode="decimal">, <input class="vin" id="b2" value="5" inputmode="decimal">)</div>
+      <div id="solveOut" style="margin-top:10px"></div>
+    </div>
+  </div>
+  <aside class="notes"><b>Say</b>“The determinant isn't zero, so the inverse exists. Swap the diagonal, flip the signs off the diagonal, divide by the determinant. Check by multiplying: we get the identity.” Tie back to spectral: the inverse has the reciprocal eigenvalues. The textbook calls the formula A⁻¹ = adj(A)/det(A) (Theorem 7.17); Cramer's rule solves one coordinate at a time.</aside>
+</section>
+
+<section class="slide" data-part="Person 1" data-title="Person 1 summary">
+  <div class="eyebrow">Person 1 · Summary</div>
+  <h1>Everything about A, in one table</h1>
+  <div class="cols">
+    <div class="tablewrap panel"><table class="t" id="sumTable"></table></div>
+    <div class="read">
+      <div class="row" style="margin-bottom:6px"><span class="small">Matrix</span> <span class="m">A</span> = <div class="mx p1mx"></div></div>
+      <div class="row p1presets"></div>
+      <p style="margin-top:10px">Eigenvalues give the <b>scale</b>, eigenvectors give the <b>direction</b>. Spectral shows the shape; Cholesky is the one you use to compute and simulate.</p>
+      <p class="small">If the professor hands out a different matrix, type it in and every slide updates.</p>
+    </div>
+  </div>
+  <aside class="notes"><b>Say</b>“So eigenvalues give the scale, eigenvectors give the direction, and the two decompositions package them up. Spectral shows you the shape; Cholesky is the cheap one you use to compute and simulate.”</aside>
+</section>
+
+<!-- ======================= PERSON 2 ======================= -->
+<section class="slide" data-part="Person 2" data-title="The firm's objective" id="p2">
+  <div class="eyebrow">Person 2 · Set-up</div>
+  <h1>A two-output firm: profit is a quadratic form</h1>
+  <div class="cols">
+    <div class="read">
+      <p>Linear demand, and the goods are <b>substitutes</b> (β₁₂, β₂₁ &gt; 0). Linear costs plus a <b>link</b> γ: making one good changes the other's marginal cost.</p>
+      <div id="firmFormulas"></div>
+    </div>
+    <div class="panel"><h3>Market and technology</h3><div class="sliders" id="firmSliders"></div>
+      <div class="row"><button class="btn" id="firmReset">Reset to class example</button></div></div>
+  </div>
+  <aside class="notes"><b>Say</b>“With fixed prices, profit is linear and the best plan sits at a corner. With linear demand, selling more lowers the price, so profit picks up squared terms. Substitutes and the cost link add a q₁q₂ term.” Linear terms are price intercept minus marginal cost; the cross term collects ½ + ½ from the two demand curves and 1 from the cost link. Split it in half so A is symmetric.</aside>
+</section>
+
+<section class="slide" data-part="Person 2" data-title="Optimize the firm">
+  <div class="eyebrow">Person 2 · Optimize</div>
+  <h1>The peak of the profit hill: q* = −½A⁻¹b</h1>
+  <div class="cols">
+    <div class="read">
+      <div id="firmSolve"></div>
+      <div class="sliders" id="firmSlidersMini"></div>
+    </div>
+    <div class="panel"><h3>Iso-profit curves (level sets of π)</h3><canvas id="cvFirm"></canvas>
+      <div class="legend"><span><i style="background:var(--accent)"></i>iso-profit curves</span><span><i style="background:var(--warm)"></i>q*</span></div></div>
+  </div>
+  <aside class="notes"><b>Say</b>“Same idea as a parabola: the peak is where the slope is zero, x* = −b/2a. In matrix form, ∇π = b + 2Aq = 0, so q* = −½A⁻¹b.” Second-order condition: A must be negative definite (a₁₁ &lt; 0 and |A| &gt; 0). Class numbers: q* = (10, 5), prices $37.50 and $40, profit $350. Then drag γ up past 3: the ellipses open into a saddle and the firm should specialize.</aside>
+</section>
+
+<!-- ======================= PERSON 3 ======================= -->
+<section class="slide" data-part="Person 3" data-title="Quadratic form lab" id="p3">
+  <div class="eyebrow">Person 3 · Level sets</div>
+  <h1>How the matrix A shapes q(x) = xᵀAx</h1>
+  <div class="cols">
+    <div class="read">
+      <div id="qfFormula"></div>
+      <div class="sliders" id="qfSliders"></div>
+      <div class="row" id="qfPresets"></div>
+      <div id="qfClass" style="margin-top:10px"></div>
+    </div>
+    <div class="panel"><h3>Level sets</h3><canvas id="cvQF"></canvas>
+      <div class="legend"><span><i style="background:var(--accent)"></i>q = c</span><span><i style="background:var(--warm)"></i>q = −c</span><span><i style="background:var(--line)"></i>other levels</span><span><i style="background:var(--ink)"></i>eigenvector axes</span></div></div>
+  </div>
+  <aside class="notes"><b>Say</b>“The cross term gets a factor of 2 because a₁₂ shows up twice. The diagonal stretches along the axes, the off-diagonal tilts, and the sign of the determinant decides ellipse versus hyperbola.” Positive definite means xᵀAx &gt; 0 for every nonzero x: all eigenvalues positive, and the same as having a Cholesky factor. Trap: det &gt; 0 alone isn't enough (−I has det 1). Click through the presets.</aside>
+</section>
+
+<section class="slide" data-part="Person 3" data-title="One family, four shapes">
+  <div class="eyebrow">Person 3 · The off-diagonal</div>
+  <h1>Turn up the off-diagonal: circle → ellipse → lines → hyperbolas</h1>
+  <div class="cols">
+    <div class="read">
+      <div class="eq big"><span class="m">A<sub>t</sub></span> = <span id="famMat"></span> &nbsp; <span class="m">q</span> = <span class="m">x</span>₁² + 2<span class="m">t x</span>₁<span class="m">x</span>₂ + <span class="m">x</span>₂²</div>
+      <div class="sl"><label for="famT">Off-diagonal t</label><input type="range" id="famT" min="-2.5" max="2.5" step="0.05" value="0.5"><output id="famTo">0.50</output></div>
+      <div id="famOut" style="margin-top:10px"></div>
+      <div class="row" style="margin-top:8px"><button class="btn" data-t="0">t = 0</button><button class="btn" data-t="0.5">t = 0.5</button><button class="btn" data-t="1">t = 1</button><button class="btn" data-t="2">t = 2</button></div>
+    </div>
+    <div class="panel"><h3>Level set q = 1</h3><canvas id="cvFam"></canvas></div>
+  </div>
+  <aside class="notes"><b>Say</b>“I keep the diagonal at one and turn up t. At zero it's a circle. A small t penalizes x₁ and x₂ having the same sign, so the circle squeezes along the 45° line. At t = 1 the determinant hits zero, one eigenvalue is zero, and the ellipse breaks open into two lines. Past that, the eigenvalues have opposite signs: hyperbolas, a saddle.”</aside>
+</section>
+
+<section class="slide" data-part="Person 3" data-title="Why we care">
+  <div class="eyebrow">Person 3 · Why it matters</div>
+  <h1>The same ellipses are the bivariate normal, and the regression line</h1>
+  <div class="cols">
+    <div class="read">
+      <p>The normal density is constant where <span class="m">(y − μ)</span>ᵀ<span class="m">Σ</span>⁻¹<span class="m">(y − μ)</span> = <span class="m">c</span>: level sets of a quadratic form. Their tilt is the correlation; the line through them is <span class="m">E[Y₂ | Y₁]</span>.</p>
+      <div class="sl"><label for="rho">Correlation ρ</label><input type="range" id="rho" min="-0.95" max="0.95" step="0.05" value="0.5"><output id="rhoO">0.50</output></div>
+      <div id="bvnOut" style="margin-top:10px"></div>
+      <table class="t" style="margin-top:12px">
+        <tr><th>Where</th><th>Quadratic form</th><th>Shape</th></tr>
+        <tr><td>Least squares</td><td class="mono">θᵀ(XᵀX)θ</td><td>bowl</td></tr>
+        <tr><td>Two-output firm</td><td class="mono">qᵀAq</td><td>hill</td></tr>
+        <tr><td>Bivariate normal</td><td class="mono">(y−μ)ᵀΣ⁻¹(y−μ)</td><td>ellipses</td></tr>
+      </table>
+    </div>
+    <div class="panel"><h3>Standardized fathers' and sons' heights</h3><canvas id="cvBvn"></canvas>
+      <div class="legend"><span><i style="background:var(--accent)"></i>density level sets</span><span><i style="background:var(--warm)"></i>regression line y₂ = ρ·y₁</span><span><i style="background:var(--muted)"></i>45° line</span></div></div>
+  </div>
+  <aside class="notes"><b>Say</b>“The professor said 80% of data science is regression, and that picture is regression. The ellipses are level sets of a quadratic form; the matrix inside, Σ⁻¹, decides their shape. Covariance matrices are always positive definite, because a variance can't be negative, so these are always ellipses, never hyperbolas.” Notice the regression line is flatter than the 45° line: regression to the mean.</aside>
+</section>
+
+<section class="slide" data-part="Backup" data-title="Likely questions">
+  <div class="eyebrow">Backup</div>
+  <h1>Likely cold-call questions</h1>
+  <div class="tablewrap panel"><table class="t">
+    <tr><th>Question</th><th>Answer</th></tr>
+    <tr><td>Why isn't matrix multiplication commutative?</td><td>AB combines rows of A with columns of B; BA does the reverse. As transformations, “do B then A” differs from “do A then B.”</td></tr>
+    <tr><td>Why normalize eigenvectors?</td><td>They're defined only up to a multiple. Length 1 fixes the scale and makes HᵀH = I.</td></tr>
+    <tr><td>Spectral vs. Cholesky?</td><td>Spectral shows shape and axes. Cholesky is triangular, unique and cheap; used to solve systems and simulate correlated normals. Both need symmetric; Cholesky also needs positive definite.</td></tr>
+    <tr><td>Why are a symmetric matrix's eigenvectors perpendicular?</td><td>λ₁h₂ᵀh₁ = h₂ᵀAh₁ = (Ah₂)ᵀh₁ = λ₂h₂ᵀh₁, so with λ₁ ≠ λ₂, h₂ᵀh₁ = 0.</td></tr>
+    <tr><td>What if |A| = 0?</td><td>One eigenvalue is 0: no inverse, no Cholesky, the form is only semidefinite, level sets are lines.</td></tr>
+    <tr><td>Why must a covariance matrix be positive (semi)definite?</td><td>Var(wᵀy) = wᵀΣw ≥ 0 for every weight vector w.</td></tr>
+    <tr><td>What if the goods were complements?</td><td>β₁₂, β₂₁ &lt; 0. The SOC depends on (β₁₂ + β₂₁ + γ)²: mild complementarity helps, very strong can break it again.</td></tr>
+  </table></div>
+  <aside class="notes"><b>Tip</b>Answer in one or two sentences, then stop. Precise and short sounds confident.</aside>
+</section>
+
+</main>
+
+<footer class="nav">
+  <button class="tool" id="prev" aria-label="Previous slide">← Prev</button>
+  <div class="where"><span id="where"></span><div class="bar"><i id="barFill"></i></div></div>
+  <button class="tool" id="next" aria-label="Next slide">Next →</button>
+</footer>
+
+<script>
+(function(){
+"use strict";
+/* ================= helpers ================= */
+const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function f(x,d=3){ if(!isFinite(x)) return '—'; if(Math.abs(x)<5e-10) x=0; let s=(+x.toFixed(d)).toString(); return s.replace('-','−'); }
+function num(el,def){ const v=parseFloat(String(el.value).replace('−','-')); return isFinite(v)?v:def; }
+function mat(rows,opt={}){ const n=rows[0].length; let cells='';
+  rows.forEach((r,i)=>r.forEach((c,j)=>{ const cls=[]; if(opt.pick) cls.push('pick'); if(opt.sel&&opt.sel[0]===i&&opt.sel[1]===j) cls.push('sel');
+    if(opt.row!=null&&opt.row===i) cls.push('rowhl'); if(opt.col!=null&&opt.col===j) cls.push('rowhl');
+    cells+=`<span class="${cls.join(' ')}" data-i="${i}" data-j="${j}">${typeof c==='number'?f(c):c}</span>`;}));
+  return `<span class="mat"${opt.id?` id="${opt.id}"`:''}><span class="br l"></span><span class="g" style="grid-template-columns:repeat(${n},auto)">${cells}</span><span class="br r"></span></span>`; }
+const vec=(a,b)=>mat([[a],[b]]);
+function setupCanvas(cv){ const r=cv.getBoundingClientRect(); const dpr=window.devicePixelRatio||1;
+  const w=Math.max(50,Math.round(r.width)), h=Math.max(50,Math.round(r.height));
+  if(cv.width!==Math.round(w*dpr)||cv.height!==Math.round(h*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);}
+  const ctx=cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,w,h); return {ctx,w,h}; }
+function view(w,h,x0,x1,y0,y1){ const pad=14; const sx=(w-2*pad)/(x1-x0), sy=(h-2*pad)/(y1-y0); const s=Math.min(sx,sy);
+  const cx=w/2-(x0+x1)/2*s, cy=h/2+(y0+y1)/2*s; return {s,X:x=>cx+x*s,Y:y=>cy-y*s,ix:px=>(px-cx)/s,iy:py=>(cy-py)/s}; }
+function grid(ctx,V,w,h,step=1){ ctx.save(); ctx.strokeStyle=css('--grid'); ctx.lineWidth=1;
+  const x0=Math.floor(V.ix(0)),x1=Math.ceil(V.ix(w)),y0=Math.floor(V.iy(h)),y1=Math.ceil(V.iy(0));
+  for(let x=x0;x<=x1;x+=step){ctx.beginPath();ctx.moveTo(V.X(x),0);ctx.lineTo(V.X(x),h);ctx.stroke();}
+  for(let y=y0;y<=y1;y+=step){ctx.beginPath();ctx.moveTo(0,V.Y(y));ctx.lineTo(w,V.Y(y));ctx.stroke();}
+  ctx.strokeStyle=css('--muted'); ctx.globalAlpha=.6; ctx.beginPath(); ctx.moveTo(V.X(0),0);ctx.lineTo(V.X(0),h);ctx.moveTo(0,V.Y(0));ctx.lineTo(w,V.Y(0));ctx.stroke(); ctx.restore(); }
+function arrow(ctx,V,x0,y0,x1,y1,color,width=2.5,dash){ const X0=V.X(x0),Y0=V.Y(y0),X1=V.X(x1),Y1=V.Y(y1);
+  ctx.save(); ctx.strokeStyle=color; ctx.fillStyle=color; ctx.lineWidth=width; if(dash) ctx.setLineDash(dash);
+  ctx.beginPath(); ctx.moveTo(X0,Y0); ctx.lineTo(X1,Y1); ctx.stroke(); ctx.setLineDash([]);
+  const a=Math.atan2(Y1-Y0,X1-X0), L=Math.hypot(X1-X0,Y1-Y0); if(L>6){ const s=9;
+  ctx.beginPath(); ctx.moveTo(X1,Y1); ctx.lineTo(X1-s*Math.cos(a-.4),Y1-s*Math.sin(a-.4)); ctx.lineTo(X1-s*Math.cos(a+.4),Y1-s*Math.sin(a+.4)); ctx.closePath(); ctx.fill(); }
+  ctx.restore(); }
+function label(ctx,V,x,y,t,color,dx=6,dy=-6){ ctx.save(); ctx.fillStyle=color; ctx.font='600 13px '+css('--body'); ctx.fillText(t,V.X(x)+dx,V.Y(y)+dy); ctx.restore(); }
+function eigSym(a,b,d){ const tr=a+d, det=a*d-b*b, disc=Math.sqrt(Math.max(0,(a-d)*(a-d)/4+b*b));
+  const l1=tr/2+disc, l2=tr/2-disc; let v1,v2;
+  if(Math.abs(b)>1e-12){ v1=[b,l1-a]; v2=[b,l2-a]; } else { if(a>=d){v1=[1,0];v2=[0,1];} else {v1=[0,1];v2=[1,0];} }
+  const nrm=v=>{const n=Math.hypot(v[0],v[1]); let r=[v[0]/n,v[1]/n]; if(r[0]<-1e-12||(Math.abs(r[0])<1e-12&&r[1]<0)) r=[-r[0],-r[1]]; return [r,n];};
+  const [h1,n1]=nrm(v1), [h2,n2]=nrm(v2); return {tr,det,l1,l2,v1,v2,h1,h2,n1,n2}; }
+function chol(a,b,d){ if(!(a>0)) return {ok:false,why:'a₁₁ must be positive to take √a₁₁.'};
+  const l11=Math.sqrt(a), l21=b/l11, r=d-l21*l21; if(!(r>1e-12)) return {ok:false,l11,l21,r,why:`what's left, a₂₂ − l₂₁² = ${f(r)}, is not positive, so there is no real square root.`};
+  return {ok:true,l11,l21,l22:Math.sqrt(r),r}; }
+function mul(A,B){ return [[A[0][0]*B[0][0]+A[0][1]*B[1][0],A[0][0]*B[0][1]+A[0][1]*B[1][1]],[A[1][0]*B[0][0]+A[1][1]*B[1][0],A[1][0]*B[0][1]+A[1][1]*B[1][1]]]; }
+function rng(seed){ let s=seed>>>0; return ()=>{ s=(s*1664525+1013904223)>>>0; return (s+.5)/4294967296; }; }
+function gauss(r){ const u=r(),v=r(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); }
+/* marching squares: values grid (N+1)x(N+1), returns segments in grid coords */
+function contour(G,N,level){ const segs=[];
+  for(let j=0;j<N;j++) for(let i=0;i<N;i++){
+    const v=[G[j*(N+1)+i]-level,G[j*(N+1)+i+1]-level,G[(j+1)*(N+1)+i+1]-level,G[(j+1)*(N+1)+i]-level];
+    const P=[[i,j],[i+1,j],[i+1,j+1],[i,j+1]]; const pts=[];
+    for(let e=0;e<4;e++){ const a=v[e], b=v[(e+1)%4]; if((a<0)!==(b<0)){ const t=a/(a-b); const p=P[e], q=P[(e+1)%4]; pts.push([p[0]+t*(q[0]-p[0]),p[1]+t*(q[1]-p[1])]); } }
+    if(pts.length===2) segs.push(pts); else if(pts.length===4){ segs.push([pts[0],pts[1]]); segs.push([pts[2],pts[3]]); } }
+  return segs; }
+function drawSegs(ctx,segs,toPx,color,width,dash){ ctx.save(); ctx.strokeStyle=color; ctx.lineWidth=width; if(dash) ctx.setLineDash(dash); ctx.beginPath();
+  for(const s of segs){ const a=toPx(s[0]), b=toPx(s[1]); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); } ctx.stroke(); ctx.restore(); }
+
+/* ================= navigation ================= */
+const slides=$$('.slide'); let cur=0; const renderers={};
+const parts=[...new Set(slides.map(s=>s.dataset.part))];
+$('#tabs').innerHTML=parts.map(p=>`<button class="tab" data-part="${p}">${p}</button>`).join('');
+$$('#tabs .tab').forEach(t=>t.onclick=()=>go(slides.findIndex(s=>s.dataset.part===t.dataset.part)));
+$$('[data-jump]').forEach(b=>b.onclick=()=>go(slides.findIndex(s=>s.id===b.dataset.jump)));
+let showNotes=false; try{ showNotes=localStorage.getItem('la-notes')==='1'; }catch(e){}
+function applyNotes(){ $$('.notes').forEach(n=>n.hidden=!showNotes); $('#notesBtn').setAttribute('aria-pressed',showNotes); }
+$('#notesBtn').onclick=()=>{ showNotes=!showNotes; try{localStorage.setItem('la-notes',showNotes?'1':'0');}catch(e){} applyNotes(); };
+applyNotes();
+function go(i){ cur=Math.max(0,Math.min(slides.length-1,i)); slides.forEach((s,k)=>s.classList.toggle('on',k===cur));
+  const s=slides[cur]; $('#where').textContent=`${cur+1} / ${slides.length} · ${s.dataset.part} · ${s.dataset.title}`;
+  $('#barFill').style.width=((cur+1)/slides.length*100)+'%';
+  $$('#tabs .tab').forEach(t=>t.setAttribute('aria-current',t.dataset.part===s.dataset.part));
+  $('#stage').scrollTop=0; requestAnimationFrame(renderCurrent); }
+function renderCurrent(){ const fn=renderers[slides[cur].dataset.title]; if(fn) fn(); }
+$('#prev').onclick=()=>go(cur-1); $('#next').onclick=()=>go(cur+1);
+document.addEventListener('keydown',e=>{ if(e.target.matches('input,select,textarea')) return;
+  if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){e.preventDefault();go(cur+1);} else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(cur-1);}
+  else if(e.key==='n'||e.key==='N'){ $('#notesBtn').click(); } else if(e.key==='f'||e.key==='F'){ $('#fsBtn').click(); } });
+$('#fsBtn').onclick=()=>{ const d=document; try{ if(d.fullscreenElement) d.exitFullscreen(); else d.documentElement.requestFullscreen().catch(()=>{}); }catch(e){} };
+window.addEventListener('resize',()=>requestAnimationFrame(renderCurrent));
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>requestAnimationFrame(renderCurrent));
+new MutationObserver(()=>requestAnimationFrame(renderCurrent)).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+
+/* ================= Person 1: vectors ================= */
+const V1={u:[2,1],v:[1,3],k:2};
+function vecRead(){ V1.u=[num($('#u1'),2),num($('#u2'),1)]; V1.v=[num($('#v1'),1),num($('#v2'),3)]; V1.k=num($('#kk'),2); }
+function vecWrite(){ $('#u1').value=f(V1.u[0],2).replace('−','-'); $('#u2').value=f(V1.u[1],2).replace('−','-'); $('#v1').value=f(V1.v[0],2).replace('−','-'); $('#v2').value=f(V1.v[1],2).replace('−','-'); }
+function vecRender(){ const {u,v,k}=V1; const s=[u[0]+v[0],u[1]+v[1]], d=[u[0]-v[0],u[1]-v[1]], ku=[k*u[0],k*u[1]];
+  $('#vecOut').innerHTML=`
+  <div class="eq"><span class="m">u + v</span> = ${vec(f(u[0])+' + '+f(v[0]),f(u[1])+' + '+f(v[1]))} = ${vec(s[0],s[1])}</div>
+  <div class="eq"><span class="m">u − v</span> = ${vec(d[0],d[1])} &nbsp; <span class="m">k·u</span> = ${vec(ku[0],ku[1])}</div>
+  <div class="eq">‖<span class="m">u</span>‖ = √(${f(u[0])}² + ${f(u[1])}²) = <span class="hl">${f(Math.hypot(u[0],u[1]))}</span> &nbsp; <span class="m">u</span>ᵀ<span class="m">v</span> = <span class="hl">${f(u[0]*v[0]+u[1]*v[1])}</span>${Math.abs(u[0]*v[0]+u[1]*v[1])<1e-9?' &nbsp;<span class="chip good">perpendicular</span>':''}</div>`;
+  const cv=$('#cvVec'); const {ctx,w,h}=setupCanvas(cv);
+  const xs=[0,u[0],v[0],s[0],d[0],ku[0]], ys=[0,u[1],v[1],s[1],d[1],ku[1]];
+  const m=Math.max(4,...xs.map(Math.abs),...ys.map(Math.abs))+1; const V=view(w,h,-m,m,-m,m); cv._V=V; grid(ctx,V,w,h);
+  arrow(ctx,V,u[0],u[1],s[0],s[1],css('--warm'),1.5,[5,4]); arrow(ctx,V,v[0],v[1],s[0],s[1],css('--accent'),1.5,[5,4]);
+  arrow(ctx,V,0,0,ku[0],ku[1],css('--muted'),5); arrow(ctx,V,v[0],v[1],u[0],u[1],css('--bad'),2.2);
+  arrow(ctx,V,0,0,s[0],s[1],css('--ink'),2.5); arrow(ctx,V,0,0,u[0],u[1],css('--accent'),3); arrow(ctx,V,0,0,v[0],v[1],css('--warm'),3);
+  label(ctx,V,u[0],u[1],'u',css('--accent')); label(ctx,V,v[0],v[1],'v',css('--warm')); label(ctx,V,s[0],s[1],'u+v',css('--ink'));
+  ctx.fillStyle=css('--accent'); ctx.beginPath(); ctx.arc(V.X(u[0]),V.Y(u[1]),6,0,7); ctx.fill(); ctx.fillStyle=css('--warm'); ctx.beginPath(); ctx.arc(V.X(v[0]),V.Y(v[1]),6,0,7); ctx.fill(); }
+['#u1','#u2','#v1','#v2','#kk'].forEach(id=>$(id).addEventListener('input',()=>{vecRead();vecRender();}));
+(function(){ const cv=$('#cvVec'); let drag=null;
+  cv.addEventListener('pointerdown',e=>{ const V=cv._V; if(!V) return; const r=cv.getBoundingClientRect(); const px=e.clientX-r.left, py=e.clientY-r.top;
+    for(const key of ['u','v']){ const p=V1[key]; if(Math.hypot(V.X(p[0])-px,V.Y(p[1])-py)<16){ drag=key; cv.setPointerCapture(e.pointerId); return; } } });
+  cv.addEventListener('pointermove',e=>{ if(!drag) return; const V=cv._V, r=cv.getBoundingClientRect();
+    V1[drag]=[Math.round(V.ix(e.clientX-r.left)*2)/2,Math.round(V.iy(e.clientY-r.top)*2)/2]; vecWrite(); vecRender(); });
+  cv.addEventListener('pointerup',()=>drag=null); cv.addEventListener('pointercancel',()=>drag=null); })();
+renderers['Vectors: add, subtract, scale']=vecRender;
+
+/* ================= Person 1: matrix multiplication ================= */
+const MM={A:[[1,1],[1,2]],B:[[0,1],[1,0]],pick:{which:'AB',i:0,j:1}};
+function mmInputs(id,key){ const el=$(id); el.innerHTML=''; for(let i=0;i<2;i++) for(let j=0;j<2;j++){ const inp=document.createElement('input'); inp.id=`${key}${i}${j}`; inp.value=MM[key][i][j]; inp.inputMode='decimal';
+  inp.setAttribute('aria-label',`${key} row ${i+1} column ${j+1}`); inp.oninput=()=>{ MM[key][i][j]=num(inp,0); mmRender(); }; el.appendChild(inp);} }
+function mmSync(){ for(const k of ['A','B']) for(let i=0;i<2;i++) for(let j=0;j<2;j++) $(`#${k}${i}${j}`).value=MM[k][i][j]; }
+function mmRender(){ const {A,B,pick}=MM; const AB=mul(A,B), BA=mul(B,A);
+  const L=pick.which==='AB'?A:B, R=pick.which==='AB'?B:A, P=pick.which==='AB'?AB:BA, {i,j}=pick;
+  $('#mmOut').innerHTML=`<div><span class="m">AB</span> = ${mat(A,{row:pick.which==='AB'?i:null})} ${mat(B,{col:pick.which==='AB'?j:null})} = ${mat(AB,{pick:true,id:'pAB',sel:pick.which==='AB'?[i,j]:null})}</div>
+    <div style="margin-top:6px"><span class="m">BA</span> = ${mat(B,{row:pick.which==='BA'?i:null})} ${mat(A,{col:pick.which==='BA'?j:null})} = ${mat(BA,{pick:true,id:'pBA',sel:pick.which==='BA'?[i,j]:null})}</div>`;
+  $('#mmExplain').innerHTML=`<div class="step"><b class="n">→</b><div>Entry (${i+1}, ${j+1}) of <span class="m">${pick.which}</span>: row ${i+1} of the left matrix (${f(L[i][0])}, ${f(L[i][1])}) times column ${j+1} of the right (${f(R[0][j])}, ${f(R[1][j])}) = ${f(L[i][0])}·${f(R[0][j])} + ${f(L[i][1])}·${f(R[1][j])} = <span class="hl">${f(P[i][j])}</span></div></div>`;
+  const same=AB.every((r,a)=>r.every((c,b)=>Math.abs(c-BA[a][b])<1e-9));
+  $('#mmComm').innerHTML=same?'<span class="chip good">AB = BA for these two (special case)</span>':'<span class="chip warn">AB ≠ BA: order matters</span>';
+  ['pAB','pBA'].forEach(id=>{ const el=document.getElementById(id); if(!el) return; el.querySelectorAll('span[data-i]').forEach(c=>c.onclick=()=>{ MM.pick={which:id.slice(1),i:+c.dataset.i,j:+c.dataset.j}; mmRender(); }); }); }
+mmInputs('#mmA','A'); mmInputs('#mmB','B');
+$$('[data-mm]').forEach(b=>b.onclick=()=>{ const t=b.dataset.mm; MM.B=t==='swap'?[[0,1],[1,0]]:t==='I'?[[1,0],[0,1]]:MM.A.map(r=>r.slice()); mmSync(); mmRender(); });
+mmRender(); renderers['Matrix multiplication']=mmRender;
+
+/* ================= Person 1: shared matrix ================= */
+const P1={a:1,b:1,d:2};
+const presets=[['Class: [1 1; 1 2]',1,1,2],['[2 1; 1 2]',2,1,2],['[5 2; 2 2]',5,2,2],['[1 2; 2 1]',1,2,1]];
+function p1Editors(){ $$('.p1mx').forEach((el,k)=>{ el.innerHTML='';
+  const mk=(key,ro)=>{ const inp=document.createElement('input'); inp.id=`p1_${k}_${key}${ro?'r':''}`; inp.inputMode='decimal'; inp.value=P1[key]; inp.dataset.key=key; if(ro){inp.readOnly=true; inp.tabIndex=-1; inp.title='Symmetric: mirrors the other off-diagonal entry';}
+    inp.setAttribute('aria-label',{a:'a11',b:ro?'a21 (mirror)':'a12',d:'a22'}[key]); if(!ro) inp.oninput=()=>{ P1[key]=num(inp,P1[key]); p1Sync(inp); p1Render(); }; return inp; };
+  el.append(mk('a'),mk('b'),mk('b',true),mk('d')); });
+  $$('.p1presets').forEach(el=>{ el.innerHTML=presets.map((p,i)=>`<button class="btn" data-pre="${i}">${p[0]}</button>`).join('');
+    el.querySelectorAll('[data-pre]').forEach(b=>b.onclick=()=>{ const p=presets[+b.dataset.pre]; P1.a=p[1];P1.b=p[2];P1.d=p[3]; p1Sync(); p1Render(); }); }); }
+function p1Sync(skip){ $$('.p1mx input').forEach(inp=>{ if(inp!==skip) inp.value=P1[inp.dataset.key]; }); }
+function p1Render(){ renderCurrent(); }
+const Amat=()=>[[P1.a,P1.b],[P1.b,P1.d]];
+
+/* eigen slide */
+let eigT=1, eigAnim=null;
+function eigRender(){ const {a,b,d}=P1, E=eigSym(a,b,d);
+  const real=true; const discr=E.tr*E.tr-4*E.det;
+  $('#eigOut').innerHTML=`
+   <div class="eq">|<span class="m">A − λI</span>| = (${f(a)} − λ)(${f(d)} − λ) − ${f(b)}² = λ² − <span class="hl">${f(E.tr)}</span>λ + <span class="hl">${f(E.det)}</span> = 0</div>
+   <div class="small">trace = ${f(E.tr)}, determinant = ${f(E.det)}</div>
+   <div class="eq">λ = (${f(E.tr)} ± √${f(discr)}) / 2 &nbsp;⇒&nbsp; <span class="box">λ₁ = ${f(E.l1)}</span> &nbsp; <span class="box">λ₂ = ${f(E.l2)}</span></div>
+   <div class="small"><span class="check">✓</span> λ₁ + λ₂ = ${f(E.l1+E.l2)} = trace &nbsp; <span class="check">✓</span> λ₁λ₂ = ${f(E.l1*E.l2)} = det</div>
+   <div class="eq">Eigenvectors <span class="m">v</span> = (${f(b)}, λ − ${f(a)}): &nbsp; ${vec(E.v1[0],E.v1[1])} , ${vec(E.v2[0],E.v2[1])}</div>
+   <div class="eq">Normalize <span class="m">h = v/‖v‖</span>: &nbsp; <span class="m">h</span>₁ = ${vec(E.h1[0],E.h1[1])} &nbsp; <span class="m">h</span>₂ = ${vec(E.h2[0],E.h2[1])}</div>
+   <div class="small"><span class="check">✓</span> h₁ᵀh₂ = ${f(E.h1[0]*E.h2[0]+E.h1[1]*E.h2[1])} (perpendicular)</div>`;
+  drawEig(); }
+function drawEig(){ const {a,b,d}=P1, E=eigSym(a,b,d); const cv=$('#cvEig'); const {ctx,w,h}=setupCanvas(cv);
+  const M=[[1-eigT+eigT*a,eigT*b],[eigT*b,1-eigT+eigT*d]];
+  const m=Math.max(2,Math.abs(E.l1),Math.abs(E.l2))*1.15+.3; const V=view(w,h,-m,m,-m,m); grid(ctx,V,w,h, m>6?2:1);
+  ctx.save(); ctx.strokeStyle=css('--muted'); ctx.lineWidth=1.5; ctx.setLineDash([4,4]); ctx.beginPath(); for(let t=0;t<=360;t+=3){const x=Math.cos(t*Math.PI/180),y=Math.sin(t*Math.PI/180); t?ctx.lineTo(V.X(x),V.Y(y)):ctx.moveTo(V.X(x),V.Y(y));} ctx.stroke(); ctx.restore();
+  ctx.save(); ctx.strokeStyle=css('--ink'); ctx.lineWidth=2.5; ctx.beginPath(); for(let t=0;t<=360;t+=3){const x=Math.cos(t*Math.PI/180),y=Math.sin(t*Math.PI/180); const X=M[0][0]*x+M[0][1]*y, Y=M[1][0]*x+M[1][1]*y; t?ctx.lineTo(V.X(X),V.Y(Y)):ctx.moveTo(V.X(X),V.Y(Y));} ctx.stroke(); ctx.restore();
+  // a few spokes to show turning
+  for(let t=0;t<360;t+=30){ const x=Math.cos(t*Math.PI/180),y=Math.sin(t*Math.PI/180); const X=M[0][0]*x+M[0][1]*y, Y=M[1][0]*x+M[1][1]*y;
+    ctx.save(); ctx.strokeStyle=css('--line'); ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(V.X(x),V.Y(y)); ctx.lineTo(V.X(X),V.Y(Y)); ctx.stroke(); ctx.restore(); }
+  const s1=1-eigT+eigT*E.l1, s2=1-eigT+eigT*E.l2;
+  arrow(ctx,V,0,0,E.h1[0],E.h1[1],css('--accent'),1.5,[3,3]); arrow(ctx,V,0,0,E.h2[0],E.h2[1],css('--warm'),1.5,[3,3]);
+  arrow(ctx,V,0,0,s1*E.h1[0],s1*E.h1[1],css('--accent'),3); arrow(ctx,V,0,0,s2*E.h2[0],s2*E.h2[1],css('--warm'),3);
+  label(ctx,V,s1*E.h1[0],s1*E.h1[1],`λ₁h₁ (${f(E.l1,2)})`,css('--accent')); label(ctx,V,s2*E.h2[0],s2*E.h2[1],`λ₂h₂ (${f(E.l2,2)})`,css('--warm'),6,16);
+  $('#eigTo').textContent=Math.round(eigT*100)+'%'; }
+$('#eigT').addEventListener('input',e=>{ eigT=+e.target.value; drawEig(); });
+$('#eigPlay').onclick=()=>{ if(reduce){ eigT=1; $('#eigT').value=1; drawEig(); return; } cancelAnimationFrame(eigAnim); const t0=performance.now();
+  const step=now=>{ eigT=Math.min(1,(now-t0)/1600); $('#eigT').value=eigT; drawEig(); if(eigT<1) eigAnim=requestAnimationFrame(step); }; eigT=0; eigAnim=requestAnimationFrame(step); };
+renderers['Eigenvalues and eigenvectors']=eigRender;
+
+/* spectral slide */
+let specStage=0, specFrom=0, specT=1, specAnim=null;
+const stageTxt=['Start: the unit circle and a marker point x = (1, 0).','1 · Hᵀ rotates the picture so the eigenvectors line up with the axes.','2 · Λ stretches along each axis by λ₁ and λ₂. This is the only step that changes shape.','3 · H rotates back. The result is exactly A·x.'];
+function specRender(){ const {a,b,d}=P1, E=eigSym(a,b,d); const H=[[E.h1[0],E.h2[0]],[E.h1[1],E.h2[1]]], L=[[E.l1,0],[0,E.l2]];
+  const R=mul(mul(H,L),[[H[0][0],H[1][0]],[H[0][1],H[1][1]]]);
+  const e11=`${f(E.l1)}(${f(E.h1[0])})² + ${f(E.l2)}(${f(E.h2[0])})² = ${f(E.l1*E.h1[0]**2)} + ${f(E.l2*E.h2[0]**2)} = ${f(R[0][0])}`;
+  $('#specOut').innerHTML=`
+   <div class="eq big"><span class="m">A = H Λ H</span>ᵀ</div>
+   <div class="eq"><span class="m">H</span> = ${mat(H)} &nbsp; <span class="m">Λ</span> = ${mat(L)}</div>
+   <div class="steps">
+    <div class="step"><b class="n">H</b><div>columns are the unit eigenvectors: the <b>directions</b>. <span class="m">H</span>ᵀ<span class="m">H</span> = <span class="m">I</span>, so it's a rotation and <span class="m">H</span>⁻¹ = <span class="m">H</span>ᵀ.</div></div>
+    <div class="step"><b class="n">Λ</b><div>eigenvalues on the diagonal: the <b>stretch</b> along each direction.</div></div>
+   </div>
+   <div class="small" style="margin-top:6px">Multiply back, entry (1,1): ${e11} <span class="check">✓</span></div>
+   <div class="eq">${mat(H)}${mat(L)}${mat([[H[0][0],H[1][0]],[H[0][1],H[1][1]]])} = ${mat(R)} <span class="check">✓ = A</span></div>
+   <div class="small">Payoff: <span class="m">A</span>⁻¹ = <span class="m">H</span>Λ⁻¹<span class="m">H</span>ᵀ, with eigenvalues ${f(1/E.l1)} and ${f(1/E.l2)}.</div>`;
+  drawSpec(); }
+function stageMap(k,E){ const H=[[E.h1[0],E.h2[0]],[E.h1[1],E.h2[1]]], Ht=[[H[0][0],H[1][0]],[H[0][1],H[1][1]]], L=[[E.l1,0],[0,E.l2]];
+  return [[[1,0],[0,1]],Ht,mul(L,Ht),mul(H,mul(L,Ht))][k]; }
+function drawSpec(){ const {a,b,d}=P1, E=eigSym(a,b,d); const cv=$('#cvSpec'); const {ctx,w,h}=setupCanvas(cv);
+  const M0=stageMap(specFrom,E), M1=stageMap(specStage,E); const M=[[0,0],[0,0]]; for(let i=0;i<2;i++)for(let j=0;j<2;j++) M[i][j]=M0[i][j]+(M1[i][j]-M0[i][j])*specT;
+  const m=Math.max(2,Math.abs(E.l1),Math.abs(E.l2))*1.15+.3; const V=view(w,h,-m,m,-m,m); grid(ctx,V,w,h,m>6?2:1);
+  // fixed axes of eigen-directions for reference
+  for(const [hv,c] of [[E.h1,css('--accent')],[E.h2,css('--warm')]]){ ctx.save(); ctx.strokeStyle=c; ctx.globalAlpha=.35; ctx.setLineDash([2,5]); ctx.beginPath(); ctx.moveTo(V.X(-m*hv[0]),V.Y(-m*hv[1])); ctx.lineTo(V.X(m*hv[0]),V.Y(m*hv[1])); ctx.stroke(); ctx.restore(); }
+  ctx.save(); ctx.strokeStyle=css('--ink'); ctx.lineWidth=2.5; ctx.beginPath(); for(let t=0;t<=360;t+=3){ const x=Math.cos(t*Math.PI/180),y=Math.sin(t*Math.PI/180); const X=M[0][0]*x+M[0][1]*y,Y=M[1][0]*x+M[1][1]*y; t?ctx.lineTo(V.X(X),V.Y(Y)):ctx.moveTo(V.X(X),V.Y(Y)); } ctx.stroke(); ctx.restore();
+  const tip=(v)=>[M[0][0]*v[0]+M[0][1]*v[1],M[1][0]*v[0]+M[1][1]*v[1]];
+  const a1=tip(E.h1), a2=tip(E.h2), x=tip([1,0]);
+  arrow(ctx,V,0,0,a1[0],a1[1],css('--accent'),3); arrow(ctx,V,0,0,a2[0],a2[1],css('--warm'),3); arrow(ctx,V,0,0,x[0],x[1],css('--bad'),2);
+  label(ctx,V,a1[0],a1[1],'h₁',css('--accent')); label(ctx,V,a2[0],a2[1],'h₂',css('--warm')); label(ctx,V,x[0],x[1],'x',css('--bad'));
+  $('#specStageTxt').textContent=stageTxt[specStage];
+  $$('[data-stage]').forEach(btn=>btn.classList.toggle('solid',+btn.dataset.stage===specStage)); }
+$$('[data-stage]').forEach(btn=>btn.onclick=()=>{ const k=+btn.dataset.stage; cancelAnimationFrame(specAnim);
+  specFrom=specStage; specStage=k; if(reduce){specT=1;drawSpec();return;} specT=0; const t0=performance.now();
+  const step=now=>{ specT=Math.min(1,(now-t0)/900); drawSpec(); if(specT<1) specAnim=requestAnimationFrame(step); else specFrom=specStage; }; specAnim=requestAnimationFrame(step); });
+renderers['Spectral decomposition']=specRender;
+
+/* cholesky slide */
+let cholSeed=6875;
+function cholRender(){ const {a,b,d}=P1, C=chol(a,b,d), E=eigSym(a,b,d);
+  let html=`<div class="eq"><span class="m">LL</span>ᵀ = ${mat([['l₁₁',0],['l₂₁','l₂₂']])}${mat([['l₁₁','l₂₁'],[0,'l₂₂']])} = ${mat([['l₁₁²','l₁₁l₂₁'],['l₁₁l₂₁','l₂₁² + l₂₂²']])} = ${mat(Amat())}</div><div class="steps">`;
+  if(a>0) html+=`<div class="step"><b class="n">1</b><div>Root the corner: l₁₁ = √a₁₁ = √${f(a)} = <span class="hl">${f(C.l11)}</span></div></div>`;
+  else html+=`<div class="step"><b class="n">1</b><div>Root the corner: a₁₁ = ${f(a)} is not positive.</div></div>`;
+  if(C.l11) html+=`<div class="step"><b class="n">2</b><div>Divide down: l₂₁ = a₂₁ / l₁₁ = ${f(b)} / ${f(C.l11)} = <span class="hl">${f(C.l21)}</span></div></div>`;
+  if(C.l11) html+=`<div class="step"><b class="n">3</b><div>Root what's left: l₂₂ = √(a₂₂ − l₂₁²) = √(${f(d)} − ${f(C.l21*C.l21)}) = ${C.ok?`<span class="hl">${f(C.l22)}</span>`:'<span style="color:var(--bad)">not real</span>'}</div></div>`;
+  html+='</div>';
+  if(C.ok){ const L=[[C.l11,0],[C.l21,C.l22]]; html+=`<div class="eq"><span class="m">L</span> = <span class="box">${mat(L)}</span> &nbsp; check: ${mat(L)}${mat([[C.l11,C.l21],[0,C.l22]])} = ${mat(mul(L,[[C.l11,C.l21],[0,C.l22]]))} <span class="check">✓</span></div>
+    <div class="chip good">Exists: A is positive definite (λ = ${f(E.l1)}, ${f(E.l2)} both &gt; 0)</div>`; }
+  else html+=`<div class="chip bad">No Cholesky: ${C.why} A is not positive definite (λ = ${f(E.l1)}, ${f(E.l2)}).</div>`;
+  $('#cholOut').innerHTML=html; drawChol(C); }
+function drawChol(C){ const cv=$('#cvChol'); const {ctx,w,h}=setupCanvas(cv); const r=rng(cholSeed); const n=600;
+  const Z=[]; for(let i=0;i<n;i++) Z.push([gauss(r),gauss(r)]);
+  const Y=C.ok?Z.map(z=>[C.l11*z[0],C.l21*z[0]+C.l22*z[1]]):[];
+  let m=3.5; for(const p of Y) m=Math.max(m,Math.abs(p[0])*1.05,Math.abs(p[1])*1.05); m=Math.min(m,12);
+  const V=view(w,h,-m,m,-m,m); grid(ctx,V,w,h,m>6?2:1);
+  ctx.save(); ctx.fillStyle=css('--muted'); ctx.globalAlpha=.35; for(const p of Z){ ctx.beginPath(); ctx.arc(V.X(p[0]),V.Y(p[1]),1.6,0,7); ctx.fill(); } ctx.restore();
+  if(C.ok){ ctx.save(); ctx.fillStyle=css('--accent'); ctx.globalAlpha=.6; for(const p of Y){ ctx.beginPath(); ctx.arc(V.X(p[0]),V.Y(p[1]),1.8,0,7); ctx.fill(); } ctx.restore();
+    const mx=Y.reduce((s,p)=>s+p[0],0)/n, my=Y.reduce((s,p)=>s+p[1],0)/n; let sxx=0,sxy=0,syy=0; for(const p of Y){ sxx+=(p[0]-mx)**2; sxy+=(p[0]-mx)*(p[1]-my); syy+=(p[1]-my)**2; }
+    $('#cholStat').innerHTML=`sample covariance of y ≈ ${mat([[sxx/(n-1),sxy/(n-1)],[sxy/(n-1),syy/(n-1)]])} vs. A = ${mat(Amat())}`; }
+  else $('#cholStat').textContent='No L, so no correlated sample.'; }
+$('#cholRedraw').onclick=()=>{ cholSeed=(cholSeed*7+13)%100000; cholRender(); };
+renderers['Cholesky decomposition']=cholRender;
+
+/* inverse slide */
+function invRender(){ const {a,b,d}=P1, det=a*d-b*b, A=Amat();
+  let html=`<div class="eq">|<span class="m">A</span>| = ${f(a)}·${f(d)} − ${f(b)}·${f(b)} = <span class="hl">${f(det)}</span></div>`;
+  if(Math.abs(det)<1e-12){ html+=`<div class="chip bad">|A| = 0: singular, no inverse (like 1/0).</div>`; $('#invOut').innerHTML=html; $('#solveOut').innerHTML='<div class="small">No unique solution when |A| = 0.</div>'; return; }
+  const I=[[d/det,-b/det],[-b/det,a/det]];
+  html+=`<div class="eq"><span class="m">A</span>⁻¹ = (1/${f(det)}) ${mat([[d,-b],[-b,a]])} = <span class="box">${mat(I)}</span></div>
+   <div class="small">Swap the diagonal, flip the signs off it, divide by the determinant.</div>
+   <div class="eq">Check: ${mat(A)}${mat(I)} = ${mat(mul(A,I))} <span class="check">✓ = I</span></div>`;
+  $('#invOut').innerHTML=html;
+  const b1=num($('#b1'),3), b2=num($('#b2'),5); const x1=I[0][0]*b1+I[0][1]*b2, x2=I[1][0]*b1+I[1][1]*b2;
+  $('#solveOut').innerHTML=`<div class="eq"><span class="m">x</span> = <span class="m">A</span>⁻¹<span class="m">b</span> = ${mat(I)}${vec(b1,b2)} = <span class="box">${vec(x1,x2)}</span></div>
+   <div class="small">Cramer's rule: x₁ = |${f(b1)} ${f(b)}; ${f(b2)} ${f(d)}| / ${f(det)} = ${f((b1*d-b*b2)/det)}, &nbsp; x₂ = |${f(a)} ${f(b1)}; ${f(b)} ${f(b2)}| / ${f(det)} = ${f((a*b2-b1*b)/det)}</div>
+   <div class="small">Check: <span class="m">Ax</span> = (${f(a*x1+b*x2)}, ${f(b*x1+d*x2)}) <span class="check">✓</span></div>`; }
+['#b1','#b2'].forEach(id=>$(id).addEventListener('input',invRender));
+renderers['The inverse']=invRender;
+
+/* summary */
+function sumRender(){ const {a,b,d}=P1, E=eigSym(a,b,d), C=chol(a,b,d), det=a*d-b*b, A=Amat();
+  const rows=[['Trace, determinant',`${f(E.tr)}, ${f(det)}`],['A²',mat(mul(A,A))],['Eigenvalues',`${f(E.l1)}, ${f(E.l2)}`],
+   ['Unit eigenvectors',`h₁ = (${f(E.h1[0])}, ${f(E.h1[1])}), h₂ = (${f(E.h2[0])}, ${f(E.h2[1])})`],
+   ['Spectral',`H = ${mat([[E.h1[0],E.h2[0]],[E.h1[1],E.h2[1]]])} Λ = ${mat([[E.l1,0],[0,E.l2]])}`],
+   ['Cholesky',C.ok?`L = ${mat([[C.l11,0],[C.l21,C.l22]])}`:'<span class="chip bad">does not exist</span>'],
+   ['Inverse',Math.abs(det)<1e-12?'<span class="chip bad">singular</span>':mat([[d/det,-b/det],[-b/det,a/det]])]];
+  $('#sumTable').innerHTML='<tr><th>Item</th><th>Result</th></tr>'+rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join(''); }
+renderers['Person 1 summary']=sumRender;
+p1Editors();
+
+/* ================= Person 2: firm ================= */
+const FIRM0={a1:60,a2:55,b11:2,b22:2,b12:.5,b21:.5,c1:10,c2:15,g:1};
+const F={...FIRM0};
+const fdefs=[['a1','α₁ price intercept 1',20,120,1],['a2','α₂ price intercept 2',20,120,1],['b11','β₁₁ own slope 1',.5,5,.1],['b22','β₂₂ own slope 2',.5,5,.1],
+ ['b12','β₁₂ cross slope',-1.5,2,.1],['b21','β₂₁ cross slope',-1.5,2,.1],['c1','c₁ marginal cost 1',0,60,1],['c2','c₂ marginal cost 2',0,60,1],['g','γ cost link',-2,6,.1]];
+function sliderHTML(prefix,keys){ return fdefs.filter(d=>keys.includes(d[0])).map(([k,lab,mn,mx,st])=>`<div class="sl"><label for="${prefix}${k}">${lab}</label><input type="range" id="${prefix}${k}" data-k="${k}" min="${mn}" max="${mx}" step="${st}" value="${F[k]}"><output id="${prefix}${k}o">${f(F[k],2)}</output></div>`).join(''); }
+$('#firmSliders').innerHTML=sliderHTML('fs_',fdefs.map(d=>d[0]));
+$('#firmSlidersMini').innerHTML='<div class="small" style="margin-top:8px">Try it:</div>'+sliderHTML('fm_',['g','b12','c1']);
+function firmSync(){ $$('#firmSliders input,#firmSlidersMini input').forEach(i=>{ i.value=F[i.dataset.k]; document.getElementById(i.id+'o').textContent=f(F[i.dataset.k],2); }); }
+$$('#firmSliders input,#firmSlidersMini input').forEach(i=>i.addEventListener('input',()=>{ F[i.dataset.k]=+i.value; firmSync(); renderCurrent(); }));
+$('#firmReset').onclick=()=>{ Object.assign(F,FIRM0); firmSync(); renderCurrent(); };
+function term(c,v,first){ if(Math.abs(c)<1e-12) return ''; const s=c<0?' − ':(first?'':' + '); const a=Math.abs(c); return `${first&&c<0?'−':s}${Math.abs(a-1)<1e-12&&v?'':f(a,2)}${v}`; }
+function firmCalc(){ const b1=F.a1-F.c1, b2=F.a2-F.c2, k=F.b12+F.b21+F.g; const det=F.b11*F.b22-k*k/4; const nd=F.b11>0&&det>1e-12;
+  const D=4*F.b11*F.b22-k*k; const q1=(2*F.b22*b1-k*b2)/D, q2=(2*F.b11*b2-k*b1)/D;
+  const p1=F.a1-F.b11*q1-F.b12*q2, p2=F.a2-F.b21*q1-F.b22*q2; const pi=.5*(b1*q1+b2*q2);
+  return {b1,b2,k,det,nd,q1,q2,p1,p2,pi,D}; }
+function firmFormulas(){ const R=firmCalc(); const v='<span class="m">';
+  $('#firmFormulas').innerHTML=`
+   <div class="eq"><span class="m">p</span>₁ = ${f(F.a1,2)}${term(-F.b11,'<span class="m">q</span>₁')}${term(-F.b12,'<span class="m">q</span>₂')} &nbsp;&nbsp; <span class="m">p</span>₂ = ${f(F.a2,2)}${term(-F.b21,'<span class="m">q</span>₁')}${term(-F.b22,'<span class="m">q</span>₂')}</div>
+   <div class="eq"><span class="m">C</span> = ${term(F.c1,'<span class="m">q</span>₁',true)}${term(F.c2,'<span class="m">q</span>₂')}${term(F.g,'<span class="m">q</span>₁<span class="m">q</span>₂')}</div>
+   <div class="eq">π = <span class="m">p</span>₁<span class="m">q</span>₁ + <span class="m">p</span>₂<span class="m">q</span>₂ − <span class="m">C</span> = <span class="box">${term(R.b1,'<span class="m">q</span>₁',true)}${term(R.b2,'<span class="m">q</span>₂')}${term(-F.b11,'<span class="m">q</span>₁²')}${term(-F.b22,'<span class="m">q</span>₂²')}${term(-R.k,'<span class="m">q</span>₁<span class="m">q</span>₂')}</span></div>
+   <div class="small">Cross term: −(β₁₂ + β₂₁ + γ) = −(${f(F.b12,2)} + ${f(F.b21,2)} + ${f(F.g,2)}) = ${f(-R.k,2)}</div>
+   <div class="eq">π(<span class="m">q</span>) = <span class="m">b</span>ᵀ<span class="m">q</span> + <span class="m">q</span>ᵀ<span class="m">Aq</span>, &nbsp; <span class="m">b</span> = ${vec(R.b1,R.b2)} &nbsp; <span class="m">A</span> = ${mat([[-F.b11,-R.k/2],[-R.k/2,-F.b22]])}</div>
+   <div class="small">Split the cross term in half so <span class="m">A</span> is symmetric.</div>`; }
+renderers["The firm's objective"]=firmFormulas;
+function firmSolve(){ const R=firmCalc(); const A=[[-F.b11,-R.k/2],[-R.k/2,-F.b22]]; const E=eigSym(A[0][0],A[0][1],A[1][1]);
+  let html=`<div class="eq">∇π = <span class="m">b</span> + 2<span class="m">Aq</span> = 0 &nbsp;⇒&nbsp; <span class="m">q</span>* = −½<span class="m">A</span>⁻¹<span class="m">b</span></div>
+   <div class="eq"><span class="m">A</span> = ${mat(A)} &nbsp; a₁₁ = ${f(A[0][0],2)}, |<span class="m">A</span>| = ${f(R.det,3)}, λ = ${f(E.l1,2)}, ${f(E.l2,2)}</div>`;
+  if(R.nd){ html+=`<div class="chip good">Negative definite: a hill, so q* is the maximum</div>`;
+    html+=`<div class="eq"><span class="m">q</span>* = <span class="box">${vec(R.q1,R.q2)}</span> &nbsp; prices ${vec(R.p1,R.p2)} &nbsp; π* = ½<span class="m">b</span>ᵀ<span class="m">q</span>* = <span class="box">$${f(R.pi,2)}</span></div>`;
+    if(R.q1<0||R.q2<0) html+=`<div class="chip warn">The interior peak has a negative output, so the firm should make only one good.</div>`; }
+  else html+=`<div class="chip bad">${R.det<=1e-12?'|A| ≤ 0':'a₁₁ ≥ 0'}: not negative definite. The stationary point is a saddle; the firm should specialize.</div>`;
+  html+=`<div class="small" style="margin-top:6px">SOC: 4β₁₁β₂₂ = ${f(4*F.b11*F.b22,2)} must exceed (β₁₂ + β₂₁ + γ)² = ${f(R.k*R.k,2)}.</div>`;
+  $('#firmSolve').innerHTML=html; drawFirm(R); }
+function drawFirm(R){ const cv=$('#cvFirm'); const {ctx,w,h}=setupCanvas(cv);
+  let Q1=Math.max(10,(R.nd&&R.q1>0?R.q1*2:0),F.a1/F.b11*0.6), Q2=Math.max(10,(R.nd&&R.q2>0?R.q2*2:0),F.a2/F.b22*0.6); Q1=Math.min(Q1,200); Q2=Math.min(Q2,200);
+  const pad={l:40,b:30,t:10,r:10}; const W=w-pad.l-pad.r, Hh=h-pad.t-pad.b; const N=120;
+  const G=new Float64Array((N+1)*(N+1)); let mn=Infinity,mx=-Infinity;
+  for(let j=0;j<=N;j++) for(let i=0;i<=N;i++){ const q1=i/N*Q1, q2=j/N*Q2; const v=R.b1*q1+R.b2*q2-F.b11*q1*q1-F.b22*q2*q2-R.k*q1*q2; G[j*(N+1)+i]=v; if(v<mn)mn=v; if(v>mx)mx=v; }
+  const toPx=p=>[pad.l+p[0]/N*W, pad.t+Hh-p[1]/N*Hh];
+  ctx.save(); ctx.strokeStyle=css('--line'); ctx.strokeRect(pad.l,pad.t,W,Hh); ctx.restore();
+  const top=R.nd&&R.q1>=0&&R.q2>=0?R.pi:mx; const levels=[]; const lo=Math.max(mn,top-(top-mn)*0.9);
+  for(let s=1;s<=9;s++) levels.push(top-(top-lo)*Math.pow(s/9,2));
+  levels.forEach((L,ix)=>{ drawSegs(ctx,contour(G,N,L),toPx,css('--accent'),ix<2?2:1.3); });
+  ctx.save(); ctx.fillStyle=css('--muted'); ctx.font='12px '+css('--mono');
+  for(let t=0;t<=4;t++){ const x=pad.l+t/4*W, y=pad.t+Hh-t/4*Hh; ctx.fillText(f(t/4*Q1,0),x-8,h-10); ctx.fillText(f(t/4*Q2,0),4,y+4); }
+  ctx.fillText('q₁',w-24,h-10); ctx.fillText('q₂',8,pad.t+12); ctx.restore();
+  if(R.nd&&R.q1>=0&&R.q2>=0&&R.q1<=Q1&&R.q2<=Q2){ const p=toPx([R.q1/Q1*N,R.q2/Q2*N]); ctx.save(); ctx.fillStyle=css('--warm'); ctx.beginPath(); ctx.arc(p[0],p[1],7,0,7); ctx.fill();
+    ctx.font='600 13px '+css('--body'); ctx.fillText(`q* = (${f(R.q1,1)}, ${f(R.q2,1)}), π* = $${f(R.pi,0)}`,Math.min(p[0]+10,w-190),Math.max(p[1]-10,20)); ctx.restore(); }
+  else { ctx.save(); ctx.fillStyle=css('--bad'); ctx.font='600 13px '+css('--body'); ctx.fillText('No interior peak: saddle or corner',pad.l+8,pad.t+18); ctx.restore(); } }
+renderers['Optimize the firm']=firmSolve;
+
+/* ================= Person 3: quadratic forms ================= */
+const Q={a11:1,a12:1,a22:2,c:1};
+const qdefs=[['a11','a₁₁',-3,3,.1],['a12','a₁₂ (off-diagonal)',-3,3,.1],['a22','a₂₂',-3,3,.1],['c','level c',.2,4,.1]];
+$('#qfSliders').innerHTML=qdefs.map(([k,lab,mn,mx,st])=>`<div class="sl"><label for="q_${k}">${lab}</label><input type="range" id="q_${k}" data-k="${k}" min="${mn}" max="${mx}" step="${st}" value="${Q[k]}"><output id="q_${k}o">${f(Q[k],2)}</output></div>`).join('');
+const qpre=[['Circle',1,0,1],['Ellipse',1,0,4],['Tilted (class A)',1,1,2],['Lines',1,1,1],['Hyperbola',1,2,1],['Hill',-1,-1,-2]];
+$('#qfPresets').innerHTML=qpre.map((p,i)=>`<button class="btn" data-qp="${i}">${p[0]}</button>`).join('');
+function qSync(){ qdefs.forEach(([k])=>{ $('#q_'+k).value=Q[k]; $('#q_'+k+'o').textContent=f(Q[k],2); }); }
+$$('#qfSliders input').forEach(i=>i.addEventListener('input',()=>{ Q[i.dataset.k]=+i.value; qSync(); qfRender(); }));
+$$('[data-qp]').forEach(b=>b.onclick=()=>{ const p=qpre[+b.dataset.qp]; Q.a11=p[1];Q.a12=p[2];Q.a22=p[3]; qSync(); qfRender(); });
+function classify(a,b,d){ const E=eigSym(a,b,d), eps=1e-9; let type,cls,shape;
+  if(E.l2>eps){type='Positive definite';cls='good';shape='ellipses, a bowl (minimum)';}
+  else if(E.l1<-eps){type='Negative definite';cls='good';shape='ellipses, a hill (maximum)';}
+  else if(E.l1>eps&&E.l2<-eps){type='Indefinite';cls='bad';shape='hyperbolas, a saddle';}
+  else if(Math.abs(E.l1)<=eps&&Math.abs(E.l2)<=eps){type='Zero';cls='warn';shape='flat';}
+  else {type=E.l1>eps?'Positive semidefinite':'Negative semidefinite';cls='warn';shape='parallel lines, a trough';}
+  return {E,type,cls,shape}; }
+function qfField(cv,a,b,d,c,showOthers,R=3){ const {ctx,w,h}=setupCanvas(cv); const V=view(w,h,-R,R,-R,R); grid(ctx,V,w,h);
+  const N=160; const G=new Float64Array((N+1)*(N+1)); const x0=V.ix(0),x1=V.ix(w),y1=V.iy(0),y0=V.iy(h);
+  for(let j=0;j<=N;j++) for(let i=0;i<=N;i++){ const x=x0+(x1-x0)*i/N, y=y1+(y0-y1)*j/N; G[j*(N+1)+i]=a*x*x+2*b*x*y+d*y*y; }
+  const toPx=p=>[p[0]/N*w,p[1]/N*h];
+  if(showOthers) for(const L of [-4,-2,-.5,.5,2,4,8]) drawSegs(ctx,contour(G,N,L),toPx,css('--line'),1);
+  drawSegs(ctx,contour(G,N,-c),toPx,css('--warm'),2.2,[6,4]); drawSegs(ctx,contour(G,N,c),toPx,css('--accent'),3);
+  return {ctx,V}; }
+function qfRender(){ const {a11:a,a12:b,a22:d,c}=Q; const K=classify(a,b,d), E=K.E, det=a*d-b*b;
+  $('#qfFormula').innerHTML=`<div class="eq big"><span class="m">q</span>(<span class="m">x</span>) = <span class="m">x</span>ᵀ${mat([[a,b],[b,d]])}<span class="m">x</span> = ${term(a,'<span class="m">x</span>₁²',true)||'0'}${term(2*b,'<span class="m">x</span>₁<span class="m">x</span>₂')}${term(d,'<span class="m">x</span>₂²')}</div>
+    <div class="small">The cross term is 2a₁₂ = ${f(2*b,2)} because a₁₂ appears twice when you multiply out.</div>`;
+  let axes=''; if(K.type==='Positive definite'||K.type==='Negative definite'){ const s=Math.abs; axes=`<div class="small">Semi-axes of q = ${K.type==='Positive definite'?'':'−'}c: √(c/|λ|) = ${f(Math.sqrt(c/s(E.l1)),3)} along h₁ and ${f(Math.sqrt(c/s(E.l2)),3)} along h₂. Big eigenvalue, short axis.</div>`; }
+  $('#qfClass').innerHTML=`<span class="chip ${K.cls}">${K.type}</span> <span class="small">→ ${K.shape}</span>
+    <div class="small" style="margin-top:6px">2×2 test: a₁₁ = ${f(a,2)}, |A| = a₁₁a₂₂ − a₁₂² = ${f(det,3)} &nbsp;·&nbsp; eigenvalues λ = ${f(E.l1,3)}, ${f(E.l2,3)}</div>
+    <div class="small">In eigenvector coordinates: q = ${f(E.l1,3)}·y₁² ${E.l2<0?'−':'+'} ${f(Math.abs(E.l2),3)}·y₂²</div>${axes}`;
+  const {ctx,V}=qfField($('#cvQF'),a,b,d,c,true);
+  arrow(ctx,V,0,0,2.6*E.h1[0],2.6*E.h1[1],css('--ink'),1.6); arrow(ctx,V,0,0,2.6*E.h2[0],2.6*E.h2[1],css('--ink'),1.6);
+  label(ctx,V,2.6*E.h1[0],2.6*E.h1[1],'h₁',css('--ink')); label(ctx,V,2.6*E.h2[0],2.6*E.h2[1],'h₂',css('--ink')); }
+renderers['Quadratic form lab']=qfRender;
+
+let famT=.5;
+const famName=t=>Math.abs(t)<1e-9?'circle':Math.abs(t)<1-1e-9?'ellipse':Math.abs(Math.abs(t)-1)<1e-9?'two parallel lines':'hyperbolas';
+function famRender(){ const t=famT; $('#famMat').innerHTML=mat([[1,t],[t,1]]); $('#famTo').textContent=f(t,2);
+  const K=classify(1,t,1);
+  $('#famOut').innerHTML=`<div class="eq">|<span class="m">A<sub>t</sub></span>| = 1 − t² = ${f(1-t*t,3)} &nbsp; λ = 1 ± t = ${f(1+t,2)}, ${f(1-t,2)}</div>
+    <span class="chip ${K.cls}">${K.type}</span> <span class="small">→ level set is <b>${famName(t)}</b></span>`;
+  qfField($('#cvFam'),1,t,1,1,false,2.5); }
+$('#famT').addEventListener('input',e=>{ famT=+e.target.value; famRender(); });
+$$('[data-t]').forEach(b=>b.onclick=()=>{ famT=+b.dataset.t; $('#famT').value=famT; famRender(); });
+renderers['One family, four shapes']=famRender;
+
+let rho=.5;
+function bvnRender(){ $('#rhoO').textContent=f(rho,2); const S=[[1,rho],[rho,1]], det=1-rho*rho, Si=[[1/det,-rho/det],[-rho/det,1/det]];
+  $('#bvnOut').innerHTML=`<div class="eq"><span class="m">Σ</span> = ${mat(S)} &nbsp; <span class="m">Σ</span>⁻¹ = ${mat(Si)}</div><div class="small">Eigenvalues of Σ: ${f(1+Math.abs(rho),2)} and ${f(1-Math.abs(rho),2)}, both positive, so always ellipses. Regression slope = ρ = ${f(rho,2)}.</div>`;
+  const cv=$('#cvBvn'); const {ctx,w,h}=setupCanvas(cv); const R=3.2; const V=view(w,h,-R,R,-R,R); grid(ctx,V,w,h);
+  const r=rng(42); const C=chol(1,rho,1); ctx.save(); ctx.fillStyle=css('--muted'); ctx.globalAlpha=.4;
+  for(let i=0;i<400;i++){ const z1=gauss(r),z2=gauss(r); const x=C.l11*z1, y=C.l21*z1+C.l22*z2; ctx.beginPath(); ctx.arc(V.X(x),V.Y(y),1.7,0,7); ctx.fill(); } ctx.restore();
+  const N=140, G=new Float64Array((N+1)*(N+1)); const x0=V.ix(0),x1=V.ix(w),y1=V.iy(0),y0=V.iy(h);
+  for(let j=0;j<=N;j++) for(let i=0;i<=N;i++){ const x=x0+(x1-x0)*i/N, y=y1+(y0-y1)*j/N; G[j*(N+1)+i]=Si[0][0]*x*x+2*Si[0][1]*x*y+Si[1][1]*y*y; }
+  for(const L of [.5,1.5,3,5]) drawSegs(ctx,contour(G,N,L),p=>[p[0]/N*w,p[1]/N*h],css('--accent'),2);
+  ctx.save(); ctx.strokeStyle=css('--muted'); ctx.setLineDash([5,5]); ctx.beginPath(); ctx.moveTo(V.X(-R),V.Y(-R)); ctx.lineTo(V.X(R),V.Y(R)); ctx.stroke(); ctx.restore();
+  ctx.save(); ctx.strokeStyle=css('--warm'); ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(V.X(-R),V.Y(-R*rho)); ctx.lineTo(V.X(R),V.Y(R*rho)); ctx.stroke(); ctx.restore();
+  label(ctx,V,R*.55,R*.55*rho,'E[Y₂|Y₁] = ρY₁',css('--warm'),4,18); ctx.save(); ctx.fillStyle=css('--muted'); ctx.font='12px '+css('--body'); ctx.fillText("father's height (std.)",w-150,h-6); ctx.fillText("son's height (std.)",6,14); ctx.restore(); }
+$('#rho').addEventListener('input',e=>{ rho=+e.target.value; bvnRender(); });
+renderers['Why we care']=bvnRender;
+
+/* ================= start ================= */
+const hash=(location.hash||'').slice(1); const startIx=hash?slides.findIndex(s=>s.id===hash):0;
+vecRender(); go(startIx>=0?startIx:0);
+})();
+</script>
+
+</body>
+</html>
